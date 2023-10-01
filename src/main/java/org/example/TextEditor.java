@@ -74,11 +74,11 @@ public class TextEditor extends JFrame {
         JPanel formattingPanel = new JPanel();
         fontComboBox = new JComboBox<>(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
         fontSizeComboBox = new JComboBox<>(new Integer[]{8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72});
-        applyFormattingButton = new JButton("Применить");
+        applyFormattingButton = new JButton("Apply");
 
-        formattingPanel.add(new JLabel("Шрифт: "));
+        formattingPanel.add(new JLabel("Font: "));
         formattingPanel.add(fontComboBox);
-        formattingPanel.add(new JLabel("Размер: "));
+        formattingPanel.add(new JLabel("Size: "));
         formattingPanel.add(fontSizeComboBox);
         formattingPanel.add(applyFormattingButton);
 
@@ -101,7 +101,6 @@ public class TextEditor extends JFrame {
                     String selectedFont = (String) fontComboBox.getSelectedItem();
                     int selectedFontSize = (Integer) fontSizeComboBox.getSelectedItem();
 
-                    // Примените форматирование к выделенному тексту
                     Font font = new Font(selectedFont, Font.PLAIN, selectedFontSize);
                     SimpleAttributeSet attributes = new SimpleAttributeSet();
                     StyleConstants.setFontFamily(attributes, font.getFamily());
@@ -128,11 +127,11 @@ public class TextEditor extends JFrame {
                 if (selectedFile.createNewFile()) {
                     openFile(selectedFile);
                 } else {
-                    JOptionPane.showMessageDialog(this, "Файл уже существует.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "The file already exists.", "Warning", JOptionPane.WARNING_MESSAGE);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Ошибка при создании файла", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error when creating a file", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -148,7 +147,7 @@ public class TextEditor extends JFrame {
 
     private void openFile(File selectedFile) {
         if (tabInfoMap.containsValue(selectedFile)) {
-            JOptionPane.showMessageDialog(this, "Файл уже открыт.", "Предупреждение", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "The file has already been opened.", "Warning", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -166,7 +165,7 @@ public class TextEditor extends JFrame {
             tabInfoMap.put(selectedFile.getAbsolutePath(), selectedFile);
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Ошибка при открытии файла", "Ошибка", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error when opening a file", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -216,8 +215,8 @@ public class TextEditor extends JFrame {
                 if (!textInFile.equals(textInTextArea)) {
                     int result = JOptionPane.showConfirmDialog(
                             this,
-                            "Сохранить изменения в файле?",
-                            "Сохранение",
+                            "Save changes to the file?",
+                            "Saving",
                             JOptionPane.YES_NO_CANCEL_OPTION
                     );
 
@@ -229,7 +228,7 @@ public class TextEditor extends JFrame {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Ошибка при чтении файла", "Ошибка", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error when reading a file", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
 
