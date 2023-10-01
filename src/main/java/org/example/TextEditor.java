@@ -2,9 +2,11 @@ package org.example;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.rtf.RTFEditorKit;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -115,12 +117,13 @@ public class TextEditor extends JFrame {
     private void newFile() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", "txt"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("RTF Files (*.rtf)", ".rtf"));
         int result = fileChooser.showSaveDialog(this);
 
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            if (!selectedFile.getName().toLowerCase().endsWith(".txt")) {
-                selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
+            if (!selectedFile.getName().toLowerCase().endsWith(".txt") && !selectedFile.getName().toLowerCase().endsWith(".rtf")) {
+                selectedFile = new File(selectedFile.getAbsolutePath() + (fileChooser.getFileFilter().getDescription().contentEquals(".txt") ? ".txt" : ".rtf"));
             }
 
             try {
@@ -152,9 +155,20 @@ public class TextEditor extends JFrame {
         }
 
         try {
-            String fileContent = readFileContent(selectedFile);
+            String fileContent;
+            JTextPane textArea;
 
-            JTextPane textArea = createTextArea(selectedFile, fileContent);
+            if (selectedFile.getName().endsWith(".rtf")) {
+                RTFEditorKit rtfKit = new RTFEditorKit();
+                FileInputStream inputStream = new FileInputStream(selectedFile);
+                textArea = new JTextPane();
+                rtfKit.read(inputStream, textArea.getDocument(), 0);
+                inputStream.close();
+            } else {
+                fileContent = readFileContent(selectedFile);
+                textArea = createTextArea(selectedFile, fileContent);
+            }
+
             JScrollPane scrollPane = new JScrollPane(textArea);
 
             JPanel tabPanel = createTabPanel(selectedFile, textArea);
@@ -163,7 +177,7 @@ public class TextEditor extends JFrame {
             tabbedPane.setTabComponentAt(tabbedPane.getTabCount() - 1, tabPanel);
 
             tabInfoMap.put(selectedFile.getAbsolutePath(), selectedFile);
-        } catch (IOException e) {
+        } catch (IOException | BadLocationException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error when opening a file", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -221,7 +235,7 @@ public class TextEditor extends JFrame {
                     );
 
                     if (result == JOptionPane.YES_OPTION) {
-                        saveFile(file, textInTextArea);
+                        saveFile(file, textArea);
                     } else if (result == JOptionPane.CANCEL_OPTION) {
                         return;
                     }
@@ -247,7 +261,7 @@ public class TextEditor extends JFrame {
             File file = tabInfoMap.get(textArea.getName());
 
             if (file != null) {
-                saveFile(file, textArea.getText());
+                saveFile(file, textArea);
             }
         }
     }
@@ -260,19 +274,20 @@ public class TextEditor extends JFrame {
 
             if (textArea != null) {
                 JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", "txt"));
+                fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", ".txt"));
+                fileChooser.setFileFilter(new FileNameExtensionFilter("RTF Files (*.rtf)", ".rtf"));
 
                 int result = fileChooser.showSaveDialog(this);
                 if (result == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
-                    if (!selectedFile.getName().toLowerCase().endsWith(".txt")) {
-                        selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
+                    if (!selectedFile.getName().toLowerCase().endsWith(".txt") && !selectedFile.getName().toLowerCase().endsWith(".rtf")) {
+                        selectedFile = new File(selectedFile.getAbsolutePath() + (fileChooser.getFileFilter().getDescription().contentEquals(".txt") ? ".txt" : ".rtf"));
                     }
 
                     tabInfoMap.remove(textArea.getName());
                     tabbedPane.remove(selectedIndex);
 
-                    saveFile(selectedFile, textArea.getText());
+                    saveFile(selectedFile, textArea);
                     openFile(selectedFile);
                 }
             }
@@ -289,12 +304,29 @@ public class TextEditor extends JFrame {
         return null;
     }
 
-    private void saveFile(File file, String text) {
+    private void saveFile(File file, JTextPane textPane) {
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            writer.write(text);
-            writer.close();
-        } catch (IOException e) {
+            String fileName = file.getName();
+            String fileExtension = fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+
+            RTFEditorKit rtfKit = new RTFEditorKit();
+
+            if ("rtf".equals(fileExtension)) {
+                StyledDocument doc = textPane.getStyledDocument();
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                rtfKit.write(out, doc, 0, doc.getLength());
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                out.writeTo(fileOutputStream);
+                fileOutputStream.close();
+            } else if ("txt".equals(fileExtension)) {
+                FileWriter fileWriter = new FileWriter(file);
+                fileWriter.write(textPane.getText());
+                fileWriter.close();
+            } else {
+                JOptionPane.showMessageDialog(this, "Unsupported file extension", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } catch (IOException | BadLocationException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error saving file", "Error", JOptionPane.ERROR_MESSAGE);
         }
