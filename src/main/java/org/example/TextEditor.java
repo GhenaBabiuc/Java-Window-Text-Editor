@@ -2,6 +2,9 @@ package org.example;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -13,6 +16,9 @@ import java.util.Map;
 public class TextEditor extends JFrame {
     private JTabbedPane tabbedPane;
     private Map<String, File> tabInfoMap;
+    private JComboBox<String> fontComboBox;
+    private JComboBox<Integer> fontSizeComboBox;
+    private JButton applyFormattingButton;
 
     public TextEditor() {
         setTitle("Text Editor");
@@ -55,8 +61,56 @@ public class TextEditor extends JFrame {
         exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
         fileMenu.add(exitMenuItem);
 
+        initFormattingPanel();
+
         setLocationRelativeTo(null);
         setVisible(true);
+
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void initFormattingPanel() {
+        JPanel formattingPanel = new JPanel();
+        fontComboBox = new JComboBox<>(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
+        fontSizeComboBox = new JComboBox<>(new Integer[]{8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72});
+        applyFormattingButton = new JButton("Применить");
+
+        formattingPanel.add(new JLabel("Шрифт: "));
+        formattingPanel.add(fontComboBox);
+        formattingPanel.add(new JLabel("Размер: "));
+        formattingPanel.add(fontSizeComboBox);
+        formattingPanel.add(applyFormattingButton);
+
+        applyFormattingButton.addActionListener(e -> applyFormatting());
+
+        getContentPane().add(formattingPanel, BorderLayout.NORTH);
+    }
+
+    private void applyFormatting() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
+
+            if (textArea != null) {
+                int start = textArea.getSelectionStart();
+                int end = textArea.getSelectionEnd();
+
+                if (start != end) {
+                    String selectedFont = (String) fontComboBox.getSelectedItem();
+                    int selectedFontSize = (Integer) fontSizeComboBox.getSelectedItem();
+
+                    // Примените форматирование к выделенному тексту
+                    Font font = new Font(selectedFont, Font.PLAIN, selectedFontSize);
+                    SimpleAttributeSet attributes = new SimpleAttributeSet();
+                    StyleConstants.setFontFamily(attributes, font.getFamily());
+                    StyleConstants.setFontSize(attributes, font.getSize());
+                    StyledDocument doc = textArea.getStyledDocument();
+                    doc.setCharacterAttributes(start, end - start, attributes, false);
+                }
+            }
+        }
     }
 
     private void newFile() {
@@ -101,7 +155,7 @@ public class TextEditor extends JFrame {
         try {
             String fileContent = readFileContent(selectedFile);
 
-            JTextArea textArea = createTextArea(selectedFile, fileContent);
+            JTextPane textArea = createTextArea(selectedFile, fileContent);
             JScrollPane scrollPane = new JScrollPane(textArea);
 
             JPanel tabPanel = createTabPanel(selectedFile, textArea);
@@ -127,14 +181,14 @@ public class TextEditor extends JFrame {
         return fileContent.toString();
     }
 
-    private JTextArea createTextArea(File file, String content) {
-        JTextArea textArea = new JTextArea();
+    private JTextPane createTextArea(File file, String content) {
+        JTextPane textArea = new JTextPane();
         textArea.setText(content);
         textArea.setName(file.getAbsolutePath());
         return textArea;
     }
 
-    private JPanel createTabPanel(File file, JTextArea textArea) {
+    private JPanel createTabPanel(File file, JTextPane textArea) {
         JPanel tabPanel = new JPanel(new BorderLayout());
         tabPanel.setOpaque(false);
 
@@ -151,7 +205,7 @@ public class TextEditor extends JFrame {
         return tabPanel;
     }
 
-    private void closeTab(File file, JTextArea textArea, JPanel tabPanel) {
+    private void closeTab(File file, JTextPane textArea, JPanel tabPanel) {
         if (file != null && textArea != null) {
             try {
                 byte[] bytes = Files.readAllBytes(file.toPath());
@@ -190,7 +244,7 @@ public class TextEditor extends JFrame {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex != -1) {
             Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
-            JTextArea textArea = findTextAreaInComponent(selectedComponent);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
             File file = tabInfoMap.get(textArea.getName());
 
             if (file != null) {
@@ -203,7 +257,7 @@ public class TextEditor extends JFrame {
         int selectedIndex = tabbedPane.getSelectedIndex();
         if (selectedIndex != -1) {
             Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
-            JTextArea textArea = findTextAreaInComponent(selectedComponent);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
 
             if (textArea != null) {
                 JFileChooser fileChooser = new JFileChooser();
@@ -226,12 +280,11 @@ public class TextEditor extends JFrame {
         }
     }
 
-    private JTextArea findTextAreaInComponent(Component component) {
-        if (component instanceof JScrollPane) {
-            JScrollPane scrollPane = (JScrollPane) component;
+    private JTextPane findTextAreaInComponent(Component component) {
+        if (component instanceof JScrollPane scrollPane) {
             JViewport viewport = scrollPane.getViewport();
-            if (viewport.getView() instanceof JTextArea) {
-                return (JTextArea) viewport.getView();
+            if (viewport.getView() instanceof JTextPane) {
+                return (JTextPane) viewport.getView();
             }
         }
         return null;
