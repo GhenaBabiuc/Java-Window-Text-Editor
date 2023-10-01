@@ -71,9 +71,6 @@ public class TextEditor extends JFrame {
 
         setLocationRelativeTo(null);
         setVisible(true);
-
-        setLocationRelativeTo(null);
-        setVisible(true);
     }
 
     private void initFormattingPanel() {
