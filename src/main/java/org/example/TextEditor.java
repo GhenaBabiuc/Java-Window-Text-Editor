@@ -14,6 +14,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class TextEditor extends JFrame {
     private JTabbedPane tabbedPane;
@@ -21,6 +22,9 @@ public class TextEditor extends JFrame {
     private JComboBox<String> fontComboBox;
     private JComboBox<Integer> fontSizeComboBox;
     private JButton applyFormattingButton;
+    private JComboBox<String> colorComboBox;
+    private JComboBox<String> backgroundColorComboBox;
+    private JComboBox<String> fontStyleComboBox;
 
     public TextEditor() {
         setTitle("Text Editor");
@@ -76,12 +80,22 @@ public class TextEditor extends JFrame {
         JPanel formattingPanel = new JPanel();
         fontComboBox = new JComboBox<>(GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames());
         fontSizeComboBox = new JComboBox<>(new Integer[]{8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72});
+        colorComboBox = new JComboBox<>(new String[]{"Black", "Red", "Blue", "Green", "Orange"});
+        backgroundColorComboBox = new JComboBox<>(new String[]{"None", "Yellow", "Gray", "Cyan"});
+        fontStyleComboBox = new JComboBox<>(new String[]{"Plain", "Bold", "Italic", "Bold Italic"});
+
         applyFormattingButton = new JButton("Apply");
 
         formattingPanel.add(new JLabel("Font: "));
         formattingPanel.add(fontComboBox);
         formattingPanel.add(new JLabel("Size: "));
         formattingPanel.add(fontSizeComboBox);
+        formattingPanel.add(new JLabel("Color: "));
+        formattingPanel.add(colorComboBox);
+        formattingPanel.add(new JLabel("Background: "));
+        formattingPanel.add(backgroundColorComboBox);
+        formattingPanel.add(new JLabel("Style: "));
+        formattingPanel.add(fontStyleComboBox);
         formattingPanel.add(applyFormattingButton);
 
         applyFormattingButton.addActionListener(e -> applyFormatting());
@@ -102,16 +116,54 @@ public class TextEditor extends JFrame {
                 if (start != end) {
                     String selectedFont = (String) fontComboBox.getSelectedItem();
                     int selectedFontSize = (Integer) fontSizeComboBox.getSelectedItem();
+                    Color selectedColor = getColorFromString((String) colorComboBox.getSelectedItem());
+                    Color selectedBackgroundColor = getBackgroundColorFromString((String) backgroundColorComboBox.getSelectedItem());
 
                     Font font = new Font(selectedFont, Font.PLAIN, selectedFontSize);
                     SimpleAttributeSet attributes = new SimpleAttributeSet();
                     StyleConstants.setFontFamily(attributes, font.getFamily());
                     StyleConstants.setFontSize(attributes, font.getSize());
+                    StyleConstants.setForeground(attributes, selectedColor);
+                    StyleConstants.setBackground(attributes, selectedBackgroundColor);
+
+                    Object o = Objects.requireNonNull(fontStyleComboBox.getSelectedItem());
+                    if (o.equals("Bold")) {
+                        StyleConstants.setBold(attributes, true);
+                    } else if (o.equals("Italic")) {
+                        StyleConstants.setItalic(attributes, true);
+                    } else if (o.equals("Bold Italic")) {
+                        StyleConstants.setBold(attributes, true);
+                        StyleConstants.setItalic(attributes, true);
+                    } else {
+                        StyleConstants.setBold(attributes, false);
+                        StyleConstants.setItalic(attributes, false);
+                    }
+
                     StyledDocument doc = textArea.getStyledDocument();
                     doc.setCharacterAttributes(start, end - start, attributes, false);
                 }
             }
         }
+    }
+
+    private Color getColorFromString(String colorString) {
+        return switch (colorString) {
+            case "Red" -> Color.RED;
+            case "Blue" -> Color.BLUE;
+            case "Green" -> Color.GREEN;
+            case "Orange" -> Color.ORANGE;
+            default -> Color.BLACK;
+        };
+    }
+
+    private Color getBackgroundColorFromString(String backgroundColorString) {
+        return switch (backgroundColorString) {
+            case "None" -> Color.WHITE;
+            case "Yellow" -> Color.YELLOW;
+            case "Gray" -> Color.GRAY;
+            case "Cyan" -> Color.CYAN;
+            default -> null;
+        };
     }
 
     private void newFile() {
@@ -176,6 +228,7 @@ public class TextEditor extends JFrame {
             tabbedPane.addTab(null, scrollPane);
             tabbedPane.setTabComponentAt(tabbedPane.getTabCount() - 1, tabPanel);
 
+            textArea.setName(selectedFile.getAbsolutePath());
             tabInfoMap.put(selectedFile.getAbsolutePath(), selectedFile);
         } catch (IOException | BadLocationException e) {
             e.printStackTrace();
@@ -221,24 +274,27 @@ public class TextEditor extends JFrame {
     private void closeTab(File file, JTextPane textArea, JPanel tabPanel) {
         if (file != null && textArea != null) {
             try {
-                byte[] bytes = Files.readAllBytes(file.toPath());
+                if (file.getName().endsWith(".txt")) {
+                    byte[] bytes = Files.readAllBytes(file.toPath());
+                    String textInFile = new String(bytes);
+                    String textInTextArea = textArea.getText();
 
-                String textInFile = new String(bytes);
-                String textInTextArea = textArea.getText();
+                    if (!textInFile.equals(textInTextArea)) {
+                        int result = JOptionPane.showConfirmDialog(
+                                this,
+                                "Save changes to the file?",
+                                "Saving",
+                                JOptionPane.YES_NO_CANCEL_OPTION
+                        );
 
-                if (!textInFile.equals(textInTextArea)) {
-                    int result = JOptionPane.showConfirmDialog(
-                            this,
-                            "Save changes to the file?",
-                            "Saving",
-                            JOptionPane.YES_NO_CANCEL_OPTION
-                    );
-
-                    if (result == JOptionPane.YES_OPTION) {
-                        saveFile(file, textArea);
-                    } else if (result == JOptionPane.CANCEL_OPTION) {
-                        return;
+                        if (result == JOptionPane.YES_OPTION) {
+                            saveFile(file, textArea);
+                        } else if (result == JOptionPane.CANCEL_OPTION) {
+                            return;
+                        }
                     }
+                } else if (file.getName().endsWith(".rtf")) {
+                    saveFile(file, textArea);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
