@@ -12,9 +12,8 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.List;
+import java.util.*;
 
 public class TextEditor extends JFrame {
     private JTabbedPane tabbedPane;
@@ -25,6 +24,18 @@ public class TextEditor extends JFrame {
     private JComboBox<String> colorComboBox;
     private JComboBox<String> backgroundColorComboBox;
     private JComboBox<String> fontStyleComboBox;
+    private JTextField searchField;
+    private JButton findButton;
+    private JButton prevResultButton;
+    private JButton nextResultButton;
+    private List<Integer> searchResults;
+    private int currentResultIndex;
+    private JLabel searchResultCountLabel;
+    private JLabel currentPositionLabel;
+    private JRadioButton searchDownRadioButton;
+    private JRadioButton searchUpRadioButton;
+    private JRadioButton searchAllRadioButton;
+    private ButtonGroup searchDirectionGroup;
 
     public TextEditor() {
         setTitle("Text Editor");
@@ -68,9 +79,153 @@ public class TextEditor extends JFrame {
         fileMenu.add(exitMenuItem);
 
         initFormattingPanel();
+        initSearchPanel();
+        initSearchDirectionPanel();
 
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    private void initSearchDirectionPanel() {
+        JPanel searchDirectionPanel = new JPanel();
+        searchDownRadioButton = new JRadioButton("Down");
+        searchUpRadioButton = new JRadioButton("Up");
+        searchAllRadioButton = new JRadioButton("All");
+        searchDirectionGroup = new ButtonGroup();
+
+        searchDirectionGroup.add(searchDownRadioButton);
+        searchDirectionGroup.add(searchUpRadioButton);
+        searchDirectionGroup.add(searchAllRadioButton);
+
+        searchDownRadioButton.setSelected(true);
+
+        searchDirectionPanel.add(searchDownRadioButton);
+        searchDirectionPanel.add(searchUpRadioButton);
+        searchDirectionPanel.add(searchAllRadioButton);
+
+        getContentPane().add(searchDirectionPanel, BorderLayout.WEST);
+    }
+
+    private void initSearchPanel() {
+        JPanel searchPanel = new JPanel();
+        searchField = new JTextField(20);
+        findButton = new JButton("Find");
+        prevResultButton = new JButton("Previous Result");
+        nextResultButton = new JButton("Next Result");
+        searchResults = new ArrayList<>();
+        currentResultIndex = -1;
+
+        findButton.addActionListener(e -> findText());
+        prevResultButton.addActionListener(e -> showPreviousResult());
+        nextResultButton.addActionListener(e -> showNextResult());
+
+        searchPanel.add(new JLabel("Search: "));
+        searchPanel.add(searchField);
+        searchPanel.add(findButton);
+        searchPanel.add(prevResultButton);
+        searchPanel.add(nextResultButton);
+
+        searchResultCountLabel = new JLabel("Results: 0");
+        currentPositionLabel = new JLabel("Position: -");
+
+        searchPanel.add(searchResultCountLabel);
+        searchPanel.add(currentPositionLabel);
+
+        getContentPane().add(searchPanel, BorderLayout.SOUTH);
+    }
+
+    private void findText() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
+
+            if (textArea != null) {
+                String searchText = searchField.getText();
+                String text = textArea.getText();
+                searchResults.clear();
+
+                int startIndex = 0;
+                int endIndex = text.length();
+
+                if (searchDownRadioButton.isSelected()) {
+                    startIndex = textArea.getCaretPosition();
+                } else if (searchUpRadioButton.isSelected()) {
+                    endIndex = textArea.getCaretPosition();
+                }
+
+                if (searchDownRadioButton.isSelected() || searchAllRadioButton.isSelected()) {
+                    while (startIndex < endIndex) {
+                        startIndex = text.indexOf(searchText, startIndex);
+                        if (startIndex == -1) {
+                            break;
+                        }
+                        searchResults.add(startIndex);
+                        startIndex += searchText.length();
+                    }
+                } else if (searchUpRadioButton.isSelected()) {
+                    while (endIndex > startIndex) {
+                        endIndex = text.lastIndexOf(searchText, endIndex - 1);
+                        if (endIndex == -1) {
+                            break;
+                        }
+                        searchResults.add(endIndex);
+                    }
+                }
+
+                if (searchResults.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "No results found.", "Search", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    currentResultIndex = 0;
+                    highlightSearchResult(textArea, searchResults.get(currentResultIndex), searchText.length());
+                }
+            }
+        }
+        if (!searchResults.isEmpty()) {
+            searchResultCountLabel.setText("Results: " + searchResults.size());
+            currentResultIndex = 0;
+            showCurrentResult();
+        }
+    }
+
+    private void showPreviousResult() {
+        if (!searchResults.isEmpty()) {
+            currentResultIndex--;
+            if (currentResultIndex < 0) {
+                currentResultIndex = searchResults.size() - 1;
+            }
+            showCurrentResult();
+        }
+    }
+
+    private void showNextResult() {
+        if (!searchResults.isEmpty()) {
+            currentResultIndex++;
+            if (currentResultIndex >= searchResults.size()) {
+                currentResultIndex = 0;
+            }
+            showCurrentResult();
+        }
+    }
+
+    private void showCurrentResult() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
+
+            if (textArea != null) {
+                int resultIndex = searchResults.get(currentResultIndex);
+                String searchText = searchField.getText();
+                highlightSearchResult(textArea, resultIndex, searchText.length());
+            }
+        }
+        currentPositionLabel.setText("Position: " + (searchResults.isEmpty() ? "-" : (currentResultIndex + 1)));
+    }
+
+    private void highlightSearchResult(JTextPane textArea, int startIndex, int length) {
+        textArea.requestFocusInWindow();
+        textArea.select(startIndex, startIndex + length);
     }
 
     private void initFormattingPanel() {
