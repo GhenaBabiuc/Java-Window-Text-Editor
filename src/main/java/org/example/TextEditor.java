@@ -28,7 +28,7 @@ public class TextEditor extends JFrame {
 
     public TextEditor() {
         setTitle("Text Editor");
-        setSize(800, 600);
+        setSize(950, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         tabbedPane = new JTabbedPane();
@@ -86,6 +86,7 @@ public class TextEditor extends JFrame {
         formattingPanel.add(new JLabel("Font: "));
         formattingPanel.add(fontComboBox);
         formattingPanel.add(new JLabel("Size: "));
+        fontSizeComboBox.setSelectedIndex(5);
         formattingPanel.add(fontSizeComboBox);
         formattingPanel.add(new JLabel("Color: "));
         formattingPanel.add(colorComboBox);
@@ -155,24 +156,23 @@ public class TextEditor extends JFrame {
 
     private Color getBackgroundColorFromString(String backgroundColorString) {
         return switch (backgroundColorString) {
-            case "None" -> Color.WHITE;
             case "Yellow" -> Color.YELLOW;
             case "Gray" -> Color.GRAY;
             case "Cyan" -> Color.CYAN;
-            default -> null;
+            default -> Color.WHITE;
         };
     }
 
     private void newFile() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", "txt"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", ".txt"));
         fileChooser.setFileFilter(new FileNameExtensionFilter("RTF Files (*.rtf)", ".rtf"));
         int result = fileChooser.showSaveDialog(this);
 
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
             if (!selectedFile.getName().toLowerCase().endsWith(".txt") && !selectedFile.getName().toLowerCase().endsWith(".rtf")) {
-                selectedFile = new File(selectedFile.getAbsolutePath() + (fileChooser.getFileFilter().getDescription().contentEquals(".txt") ? ".txt" : ".rtf"));
+                selectedFile = new File(selectedFile.getAbsolutePath() + (fileChooser.getFileFilter().getDescription().contains(".txt") ? ".txt" : ".rtf"));
             }
 
             try {
@@ -334,7 +334,7 @@ public class TextEditor extends JFrame {
                 if (result == JFileChooser.APPROVE_OPTION) {
                     File selectedFile = fileChooser.getSelectedFile();
                     if (!selectedFile.getName().toLowerCase().endsWith(".txt") && !selectedFile.getName().toLowerCase().endsWith(".rtf")) {
-                        selectedFile = new File(selectedFile.getAbsolutePath() + (fileChooser.getFileFilter().getDescription().contentEquals(".txt") ? ".txt" : ".rtf"));
+                        selectedFile = new File(selectedFile.getAbsolutePath() + (fileChooser.getFileFilter().getDescription().contains(".txt") ? ".txt" : ".rtf"));
                     }
 
                     tabInfoMap.remove(textArea.getName());
