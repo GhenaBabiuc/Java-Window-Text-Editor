@@ -80,30 +80,9 @@ public class TextEditor extends JFrame {
 
         initFormattingPanel();
         initSearchPanel();
-        initSearchDirectionPanel();
 
         setLocationRelativeTo(null);
         setVisible(true);
-    }
-
-    private void initSearchDirectionPanel() {
-        JPanel searchDirectionPanel = new JPanel();
-        searchDownRadioButton = new JRadioButton("Down");
-        searchUpRadioButton = new JRadioButton("Up");
-        searchAllRadioButton = new JRadioButton("All");
-        searchDirectionGroup = new ButtonGroup();
-
-        searchDirectionGroup.add(searchDownRadioButton);
-        searchDirectionGroup.add(searchUpRadioButton);
-        searchDirectionGroup.add(searchAllRadioButton);
-
-        searchDownRadioButton.setSelected(true);
-
-        searchDirectionPanel.add(searchDownRadioButton);
-        searchDirectionPanel.add(searchUpRadioButton);
-        searchDirectionPanel.add(searchAllRadioButton);
-
-        getContentPane().add(searchDirectionPanel, BorderLayout.WEST);
     }
 
     private void initSearchPanel() {
@@ -121,6 +100,22 @@ public class TextEditor extends JFrame {
 
         searchPanel.add(new JLabel("Search: "));
         searchPanel.add(searchField);
+
+        searchDownRadioButton = new JRadioButton("Down");
+        searchUpRadioButton = new JRadioButton("Up");
+        searchAllRadioButton = new JRadioButton("All");
+        searchDirectionGroup = new ButtonGroup();
+
+        searchDirectionGroup.add(searchDownRadioButton);
+        searchDirectionGroup.add(searchUpRadioButton);
+        searchDirectionGroup.add(searchAllRadioButton);
+
+        searchDownRadioButton.setSelected(true);
+
+        searchPanel.add(searchDownRadioButton);
+        searchPanel.add(searchUpRadioButton);
+        searchPanel.add(searchAllRadioButton);
+
         searchPanel.add(findButton);
         searchPanel.add(prevResultButton);
         searchPanel.add(nextResultButton);
