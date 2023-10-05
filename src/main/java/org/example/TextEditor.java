@@ -36,6 +36,10 @@ public class TextEditor extends JFrame {
     private JRadioButton searchUpRadioButton;
     private JRadioButton searchAllRadioButton;
     private ButtonGroup searchDirectionGroup;
+    private JTextField replaceField;
+    private JButton replaceButton;
+    private JButton replaceAllButton;
+
 
     public TextEditor() {
         setTitle("Text Editor");
@@ -126,7 +130,62 @@ public class TextEditor extends JFrame {
         searchPanel.add(searchResultCountLabel);
         searchPanel.add(currentPositionLabel);
 
-        getContentPane().add(searchPanel, BorderLayout.SOUTH);
+        JPanel replacePanel = new JPanel();
+        replaceField = new JTextField(20);
+        replaceButton = new JButton("Replace");
+        replaceAllButton = new JButton("Replace All");
+
+        replaceButton.addActionListener(e -> replaceText());
+        replaceAllButton.addActionListener(e -> replaceAllText());
+
+        replacePanel.add(new JLabel("Replace with: "));
+        replacePanel.add(replaceField);
+        replacePanel.add(replaceButton);
+        replacePanel.add(replaceAllButton);
+
+        JPanel dockedPanel = new JPanel(new GridLayout(2, 1));
+        dockedPanel.add(searchPanel);
+        dockedPanel.add(replacePanel);
+
+        getContentPane().add(dockedPanel, BorderLayout.SOUTH);
+    }
+
+    private void replaceText() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
+
+            if (textArea != null) {
+                String searchText = searchField.getText();
+                String replaceText = replaceField.getText();
+
+                int start = textArea.getSelectionStart();
+                int end = textArea.getSelectionEnd();
+                String text = textArea.getText();
+                String newText = text.substring(0, start) + text.substring(start, end).replaceFirst(searchText, replaceText) + text.substring(end);
+
+                textArea.setText(newText);
+            }
+        }
+    }
+
+    private void replaceAllText() {
+        int selectedIndex = tabbedPane.getSelectedIndex();
+        if (selectedIndex != -1) {
+            Component selectedComponent = tabbedPane.getComponentAt(selectedIndex);
+            JTextPane textArea = findTextAreaInComponent(selectedComponent);
+
+            if (textArea != null) {
+                String searchText = searchField.getText();
+                String replaceText = replaceField.getText();
+                String text = textArea.getText();
+
+                text = text.replaceAll(searchText, replaceText);
+
+                textArea.setText(text);
+            }
+        }
     }
 
     private void findText() {
