@@ -384,14 +384,8 @@ public class TextEditor extends JFrame {
     }
 
     private String readFileContent(File file) throws IOException {
-        StringBuilder fileContent = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                fileContent.append(line).append("\n");
-            }
-        }
-        return fileContent.toString();
+        byte[] bytes = Files.readAllBytes(file.toPath());
+        return new String(bytes);
     }
 
     private JTextPane createTextArea(File file, String content) {
