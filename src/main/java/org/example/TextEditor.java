@@ -2,13 +2,11 @@ package org.example;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.SimpleAttributeSet;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyledDocument;
+import javax.swing.text.*;
 import javax.swing.text.rtf.RTFEditorKit;
 import java.awt.*;
 import java.awt.event.InputEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.file.Files;
@@ -436,9 +434,59 @@ public class TextEditor extends JFrame {
 
             textArea.setName(selectedFile.getAbsolutePath());
             tabInfoMap.put(selectedFile.getAbsolutePath(), selectedFile);
+
+            textArea.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyTyped(KeyEvent e) {
+                    char typedChar = e.getKeyChar();
+                    if (isValidCharacter(typedChar)) {
+                        applyStyleAndInsertCharacter(typedChar, textArea);
+                    }
+                }
+            });
         } catch (IOException | BadLocationException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error when opening a file", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private boolean isValidCharacter(char c) {
+        return Character.isLetterOrDigit(c) || c == ',' || c == '.' || c == ' ';
+    }
+
+    private void applyStyleAndInsertCharacter(char typedChar, JTextPane textArea) {
+        String selectedFont = (String) fontComboBox.getSelectedItem();
+        int selectedFontSize = (Integer) fontSizeComboBox.getSelectedItem();
+        Color selectedColor = getColorFromString((String) colorComboBox.getSelectedItem());
+        Color selectedBackgroundColor = getBackgroundColorFromString((String) backgroundColorComboBox.getSelectedItem());
+
+        Font font = new Font(selectedFont, Font.PLAIN, selectedFontSize);
+        SimpleAttributeSet attributes = new SimpleAttributeSet();
+        StyleConstants.setFontFamily(attributes, font.getFamily());
+        StyleConstants.setFontSize(attributes, font.getSize());
+        StyleConstants.setForeground(attributes, selectedColor);
+        StyleConstants.setBackground(attributes, selectedBackgroundColor);
+
+        Object o = Objects.requireNonNull(fontStyleComboBox.getSelectedItem());
+        if (o.equals("Bold")) {
+            StyleConstants.setBold(attributes, true);
+        } else if (o.equals("Italic")) {
+            StyleConstants.setItalic(attributes, true);
+        } else if (o.equals("Bold Italic")) {
+            StyleConstants.setBold(attributes, true);
+            StyleConstants.setItalic(attributes, true);
+        } else {
+            StyleConstants.setBold(attributes, false);
+            StyleConstants.setItalic(attributes, false);
+        }
+
+        Document doc = textArea.getDocument();
+        int caretPosition = textArea.getCaretPosition();
+
+        try {
+            doc.insertString(caretPosition, String.valueOf(typedChar), attributes);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
         }
     }
 
