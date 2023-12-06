@@ -440,6 +440,7 @@ public class TextEditor extends JFrame {
                 public void keyTyped(KeyEvent e) {
                     char typedChar = e.getKeyChar();
                     if (isValidCharacter(typedChar)) {
+                        e.consume();
                         applyStyleAndInsertCharacter(typedChar, textArea);
                     }
                 }
