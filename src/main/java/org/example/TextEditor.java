@@ -155,15 +155,27 @@ public class TextEditor extends JFrame {
             JTextPane textArea = findTextAreaInComponent(selectedComponent);
 
             if (textArea != null) {
-                String searchText = searchField.getText();
+                StyledDocument doc = (StyledDocument) textArea.getDocument();
+
                 String replaceText = replaceField.getText();
 
                 int start = textArea.getSelectionStart();
                 int end = textArea.getSelectionEnd();
-                String text = textArea.getText();
-                String newText = text.substring(0, start) + text.substring(start, end).replaceFirst(searchText, replaceText) + text.substring(end);
 
-                textArea.setText(newText);
+                try {
+                    AttributeSet originalStyle = doc.getCharacterElement(start).getAttributes();
+
+                    String selectedText = doc.getText(start, end - start);
+                    if (end != start) {
+                        selectedText = selectedText.replaceFirst(selectedText, replaceText);
+
+                        doc.remove(start, end - start);
+
+                        doc.insertString(start, selectedText, originalStyle);
+                    }
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
