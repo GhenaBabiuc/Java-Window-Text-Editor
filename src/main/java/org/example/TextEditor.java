@@ -5,9 +5,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.*;
 import javax.swing.text.rtf.RTFEditorKit;
 import java.awt.*;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.List;
@@ -191,17 +189,19 @@ public class TextEditor extends JFrame {
                 String searchText = searchField.getText();
                 String replaceText = replaceField.getText();
 
-                try {
-                    int start = 0;
-                    while ((start = textArea.getText().indexOf(searchText, start)) != -1) {
-                        AttributeSet originalStyle = doc.getCharacterElement(start).getAttributes();
-                        int end = start + searchText.length();
-                        doc.remove(start, searchText.length());
-                        doc.insertString(start, replaceText, originalStyle);
-                        start = end;
+                if (!Objects.equals(searchText, "")) {
+                    try {
+                        int start = 0;
+                        while ((start = textArea.getText().indexOf(searchText, start)) != -1) {
+                            AttributeSet originalStyle = doc.getCharacterElement(start).getAttributes();
+                            int end = start + searchText.length();
+                            doc.remove(start, searchText.length());
+                            doc.insertString(start, replaceText, originalStyle);
+                            start = end;
+                        }
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
                     }
-                } catch (BadLocationException e) {
-                    e.printStackTrace();
                 }
             }
         }
@@ -450,7 +450,7 @@ public class TextEditor extends JFrame {
 
             JPanel tabPanel = createTabPanel(selectedFile, textArea);
 
-            tabbedPane.addTab(null, scrollPane);
+            tabbedPane.addTab(selectedFile.getAbsolutePath(), scrollPane);
             tabbedPane.setTabComponentAt(tabbedPane.getTabCount() - 1, tabPanel);
 
             textArea.setName(selectedFile.getAbsolutePath());
@@ -534,7 +534,19 @@ public class TextEditor extends JFrame {
         closeButton.setBorderPainted(false);
         closeButton.addActionListener(e -> closeTab(file, textArea, tabPanel));
 
-        tabPanel.add(new JLabel(file.getName()), BorderLayout.CENTER);
+        JLabel tabName = new JLabel(file.getName());
+
+        tabName.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int tabIndex = tabbedPane.indexOfTab(file.getAbsolutePath());
+                if (tabIndex != -1) {
+                    tabbedPane.setSelectedIndex(tabIndex);
+                }
+            }
+        });
+
+        tabPanel.add(tabName, BorderLayout.CENTER);
         tabPanel.setToolTipText(file.getAbsolutePath());
         tabPanel.add(closeButton, BorderLayout.EAST);
 
